@@ -1,4 +1,4 @@
-import { Router } from 'https://deno.land/x/oak@v6.0.1/mod.ts';
+import { Router } from './config/deps.ts';
 
 import auth from './middleware/auth.ts';
 

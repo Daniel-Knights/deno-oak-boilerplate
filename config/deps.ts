@@ -1,12 +1,12 @@
 import { config } from 'https://deno.land/x/dotenv@v1.0.1/mod.ts';
 
-export { Application } from 'https://deno.land/x/oak@v6.0.1/mod.ts';
+export { Application, Router } from 'https://deno.land/x/oak@v6.3.2/mod.ts';
 export {
     Database,
     Model,
     DataTypes,
     Relationships,
-} from 'https://deno.land/x/denodb@v1.0.12/mod.ts';
+} from 'https://deno.land/x/denodb@v1.0.14/mod.ts';
 export { create, verify } from 'https://deno.land/x/djwt@v1.9/mod.ts';
 export { hash, compare } from 'https://deno.land/x/bcrypt@v0.2.4/mod.ts';
 

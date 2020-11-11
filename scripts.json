@@ -1,9 +1,14 @@
 {
     "$schema": "https://deno.land/x/denon/schema.json",
+    "allow": ["net", "read", "write", "plugin", "env"],
     "scripts": {
         "start": {
-            "cmd": "deno run -c tsconfig.json --allow-net --allow-read --allow-write --allow-plugin --allow-env --unstable app.ts",
+            "cmd": "deno run --unstable app.ts",
             "desc": "run my app.ts file"
+        },
+        "reload": {
+            "cmd": "deno run --reload --unstable app.ts",
+            "desc": "reload deps"
         }
     },
     "watcher": { "match": ["**/*.*"] }
