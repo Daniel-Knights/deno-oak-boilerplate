@@ -1,25 +1,37 @@
-import { verify, env } from '../config/deps.ts';
+import { verify, env, RouterMiddleware } from '../config/deps.ts';
 
 // Verify JWT
-const auth = async (ctx: any, next: any) => {
-    const token = await ctx.request.headers.get('x-auth-token');
+const auth: RouterMiddleware = async (ctx, next) => {
+  const token = await ctx.request.headers.get('x-auth-token');
 
-    await verify(token, env.JWT_SECRET, 'HS512')
-        .then(async payload => {
-            // Set user details on the request body
-            ctx.request.user = payload;
+  if (!token) {
+    ctx.response.status = 401;
+    ctx.response.body = {
+      success: false,
+      msg: 'Authorization denied',
+    };
 
-            await next();
-        })
-        .catch(() => {
-            ctx.response.status = 401;
-            ctx.response.body = {
-                success: false,
-                msg: 'Authorization denied',
-            };
+    return;
+  }
 
-            return;
-        });
+  await verify(token, env.JWT_SECRET, 'HS512')
+    .then(async (payload) => {
+      const bodyValue = await ctx.request.body().value;
+
+      // Set user details on the request body
+      bodyValue.user = payload;
+
+      await next();
+    })
+    .catch(() => {
+      ctx.response.status = 401;
+      ctx.response.body = {
+        success: false,
+        msg: 'Authorization denied',
+      };
+
+      return;
+    });
 };
 
 export default auth;

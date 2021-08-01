@@ -1,19 +1,21 @@
+import { RouterContext } from '../config/deps.ts';
+
 // Check for existence of required fields
-export const validate: Function = (fields: Object) => {
-    let valid;
+export const validate = (fields: Record<string, unknown>) => {
+  let valid;
 
-    Object.values(fields).forEach(field => {
-        valid = !field ? false : true;
-    });
+  Object.values(fields).forEach((field) => {
+    valid = !field ? false : true;
+  });
 
-    return valid;
+  return valid;
 };
 
 // Invalid fields response
-export const invalid: Function = (ctx: any) => {
-    ctx.response.status = 400;
-    ctx.response.body = {
-        success: false,
-        msg: 'Missing required fields',
-    };
+export const invalid = (ctx: RouterContext) => {
+  ctx.response.status = 400;
+  ctx.response.body = {
+    success: false,
+    msg: 'Missing required fields',
+  };
 };

@@ -6,18 +6,18 @@ import db from './config/db.ts';
 const app = new Application();
 
 // Initialise database
-db;
+db.sync();
 
 // Middleware
 app.use(router.routes());
 app.use(router.allowedMethods());
 
 // Event listeners
-app.addEventListener('error', e => console.error('Error: ', e.error));
+app.addEventListener('error', (e) => console.error('Error: ', e.error));
 app.addEventListener('listen', ({ hostname, port, secure }) => {
-    console.log(
-        `Listening on: ${secure ? 'https://' : 'http://'}${hostname ?? 'localhost'}:${port}`
-    );
+  console.log(
+    `Listening on: ${secure ? 'https://' : 'http://'}${hostname ?? 'localhost'}:${port}`
+  );
 });
 
 await app.listen({ port: 3000 });

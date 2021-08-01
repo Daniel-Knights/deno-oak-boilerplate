@@ -1,17 +1,18 @@
-import { Database, env } from '../config/deps.ts';
+import { Database, MongoDBConnector, env } from '../config/deps.ts';
 
 // Models
 import Post from '../models/Post.ts';
 import User from '../models/User.ts';
 
 // Connect
-const db = new Database('mongo', {
-    uri: env.MONGO_URI,
-    database: 'deno_oak',
+const connector = new MongoDBConnector({
+  uri: env.MONGO_URI,
+  database: 'deno_oak',
 });
+
+const db = new Database(connector);
 
 // Links
 db.link([Post, User]);
-db.sync();
 
 export default db;
