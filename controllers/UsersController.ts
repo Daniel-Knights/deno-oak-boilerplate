@@ -1,11 +1,24 @@
-import { create, hash, compare, env, RouterContext } from '../config/deps.ts';
+import { create, hash, compare, RouterContext } from '../config/deps.ts';
 import { validate, invalid } from '../functions/validate.ts';
+import { generateCryptoKey } from '../functions/utils.ts';
 
 import User from '../models/User.ts';
 
+async function createToken(user: User) {
+  const key = await generateCryptoKey();
+
+  const token = await create(
+    { alg: 'HS512', typ: 'JWT' },
+    { ...user, exp: Date.now() / 1000 + 3600 },
+    key
+  );
+
+  return token;
+}
+
 export default {
   // Get user by id
-  get_user: async (ctx: RouterContext) => {
+  get_user: async (ctx: RouterContext<'/api/users'>) => {
     const bodyValue = await ctx.request.body().value;
 
     await User.find(bodyValue.user?._id || '')
@@ -32,7 +45,7 @@ export default {
   },
 
   // Login user
-  login: async (ctx: RouterContext) => {
+  login: async (ctx: RouterContext<'/api/users/login'>) => {
     const { email, password } = await ctx.request.body().value;
 
     if (!validate({ email, password })) return invalid(ctx);
@@ -58,12 +71,7 @@ export default {
         delete user.password;
 
         if (match) {
-          // Create token
-          const token = await create(
-            { alg: 'HS512', typ: 'JWT' },
-            { ...user, exp: Date.now() / 1000 + 3600 },
-            env.JWT_SECRET
-          );
+          const token = await createToken(user);
 
           ctx.response.status = 200;
           ctx.response.body = {
@@ -93,7 +101,7 @@ export default {
   },
 
   // Signup user
-  signup: async (ctx: RouterContext) => {
+  signup: async (ctx: RouterContext<'/api/users/signup'>) => {
     const { name, email, password } = await ctx.request.body().value;
 
     if (!validate({ email, password })) return invalid(ctx);
@@ -119,12 +127,7 @@ export default {
         // Prevent password being returned
         delete user.password;
 
-        // Create token
-        const token = await create(
-          { alg: 'HS512', typ: 'JWT' },
-          { ...user, exp: Date.now() / 1000 + 3600 },
-          env.JWT_SECRET
-        );
+        const token = await createToken(user);
 
         ctx.response.status = 201;
         ctx.response.body = {

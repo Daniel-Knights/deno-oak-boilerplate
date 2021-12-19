@@ -5,7 +5,7 @@ import Post from '../models/Post.ts';
 
 export default {
   // Get all posts
-  get_all: async (ctx: RouterContext) => {
+  get_all: async (ctx: RouterContext<'/api/posts'>) => {
     await Post.all()
       .then((posts) => {
         ctx.response.status = 200;
@@ -27,7 +27,7 @@ export default {
   },
 
   // Get single post
-  get_single: async (ctx: RouterContext) => {
+  get_single: async (ctx: RouterContext<'/api/posts/:id'>) => {
     const { id } = ctx.params;
 
     await Post.find(id || '')
@@ -62,7 +62,7 @@ export default {
   },
 
   // Create post
-  create: async (ctx: RouterContext) => {
+  create: async (ctx: RouterContext<'/api/posts'>) => {
     const { text, author } = await ctx.request.body().value;
 
     if (!validate({ text, author })) return invalid(ctx);
@@ -89,7 +89,7 @@ export default {
   },
 
   // Delete post
-  delete: async (ctx: RouterContext) => {
+  delete: async (ctx: RouterContext<'/api/posts/:id'>) => {
     const { id } = ctx.params;
     const post = await Post.find(id || '');
 

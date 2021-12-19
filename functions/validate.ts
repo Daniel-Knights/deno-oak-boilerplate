@@ -1,4 +1,4 @@
-import { RouterContext } from '../config/deps.ts';
+import { Context } from '../config/deps.ts';
 
 // Check for existence of required fields
 export const validate = (fields: Record<string, unknown>) => {
@@ -12,7 +12,7 @@ export const validate = (fields: Record<string, unknown>) => {
 };
 
 // Invalid fields response
-export const invalid = (ctx: RouterContext) => {
+export const invalid = (ctx: Context) => {
   ctx.response.status = 400;
   ctx.response.body = {
     success: false,

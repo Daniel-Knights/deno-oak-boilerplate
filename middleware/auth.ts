@@ -1,7 +1,8 @@
-import { verify, env, RouterMiddleware } from '../config/deps.ts';
+import { verify, Context } from '../config/deps.ts';
+import { generateCryptoKey } from '../functions/utils.ts';
 
 // Verify JWT
-const auth: RouterMiddleware = async (ctx, next) => {
+const auth = async (ctx: Context, next: () => Promise<unknown>) => {
   const token = await ctx.request.headers.get('x-auth-token');
 
   if (!token) {
@@ -14,7 +15,7 @@ const auth: RouterMiddleware = async (ctx, next) => {
     return;
   }
 
-  await verify(token, env.JWT_SECRET, 'HS512')
+  await verify(token, await generateCryptoKey())
     .then(async (payload) => {
       const bodyValue = await ctx.request.body().value;
 
