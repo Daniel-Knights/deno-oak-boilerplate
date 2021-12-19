@@ -1,8 +1,7 @@
 {
   "scripts": {
     "start": {
-      "cmd": "deno run --watch --unstable --allow-read --allow-net app.ts",
-      "desc": "run my app.ts file"
+      "cmd": "deno run --watch --unstable --allow-read --allow-net src/app.ts"
     }
   }
 }
