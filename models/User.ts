@@ -1,15 +1,10 @@
-import { Model, DataTypes } from '../config/deps.ts';
+import { Bson } from '../config/deps.ts';
 
-class User extends Model {
-  static table = 'users';
-  static timestamps = true;
-
-  static fields = {
-    _id: { primaryKey: true },
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-  };
+export interface User {
+  _id: Bson.ObjectId;
+  name: string;
+  email: string;
+  password?: string;
+  createdAt: Bson.Timestamp;
+  updatedAt: Bson.Timestamp;
 }
-
-export default User;

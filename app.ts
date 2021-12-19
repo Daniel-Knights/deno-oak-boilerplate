@@ -1,12 +1,10 @@
 import { Application } from './config/deps.ts';
 
+import './config/db.ts';
 import router from './routes.ts';
-import db from './config/db.ts';
+import { log } from './functions/utils.ts';
 
 const app = new Application();
-
-// Initialise database
-db.sync();
 
 // Middleware
 app.use(router.routes());
@@ -15,7 +13,7 @@ app.use(router.allowedMethods());
 // Event listeners
 app.addEventListener('error', (e) => console.error('Error: ', e.error));
 app.addEventListener('listen', ({ hostname, port, secure }) => {
-  console.log(
+  log(
     `Listening on: ${secure ? 'https://' : 'http://'}${hostname ?? 'localhost'}:${port}`
   );
 });

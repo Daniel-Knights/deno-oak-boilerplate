@@ -1,5 +1,3 @@
-import { Context } from '../config/deps.ts';
-
 // Check for existence of required fields
 export const validate = (fields: Record<string, unknown>) => {
   let valid;
@@ -9,13 +7,4 @@ export const validate = (fields: Record<string, unknown>) => {
   });
 
   return valid;
-};
-
-// Invalid fields response
-export const invalid = (ctx: Context) => {
-  ctx.response.status = 400;
-  ctx.response.body = {
-    success: false,
-    msg: 'Missing required fields',
-  };
 };

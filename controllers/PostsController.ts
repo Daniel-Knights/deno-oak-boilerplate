@@ -1,28 +1,25 @@
-import { RouterContext } from '../config/deps.ts';
-import { validate, invalid } from '../functions/validate.ts';
+import { RouterContext, Bson } from '../config/deps.ts';
+import { validate } from '../functions/validate.ts';
+import { response } from '../functions/response.ts';
+import { logErr } from '../functions/utils.ts';
+import { db } from '../config/db.ts';
 
-import Post from '../models/Post.ts';
+import type { Post } from '../models/Post.ts';
+
+const postsCollection = db.collection<Post>('posts');
 
 export default {
   // Get all posts
   get_all: async (ctx: RouterContext<'/api/posts'>) => {
-    await Post.all()
+    await postsCollection
+      .find()
+      .toArray()
       .then((posts) => {
-        ctx.response.status = 200;
-        ctx.response.body = {
-          success: true,
-          msg: 'Fetched posts',
-          posts,
-        };
+        response(ctx, 200, 'Fetched posts', posts);
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to fetch posts',
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to fetch posts');
       });
   },
 
@@ -30,34 +27,19 @@ export default {
   get_single: async (ctx: RouterContext<'/api/posts/:id'>) => {
     const { id } = ctx.params;
 
-    await Post.find(id || '')
+    await postsCollection
+      .find({ id: id || '' })
+      .next()
       .then((post) => {
         if (!post) {
-          ctx.response.status = 404;
-          ctx.response.body = {
-            success: false,
-            msg: 'Post not found',
-          };
-
-          return;
+          return response(ctx, 404, 'Post not found');
         }
 
-        ctx.response.status = 200;
-        ctx.response.body = {
-          success: true,
-          msg: 'Fetched post',
-          post,
-        };
+        response(ctx, 200, 'Fetched post', post);
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to fetch post',
-          err: err.message,
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to fetch post');
       });
   },
 
@@ -65,61 +47,40 @@ export default {
   create: async (ctx: RouterContext<'/api/posts'>) => {
     const { text, author } = await ctx.request.body().value;
 
-    if (!validate({ text, author })) return invalid(ctx);
+    if (!validate({ text, author })) {
+      return response(ctx, 400, 'Missing required fields');
+    }
 
-    await Post.create({ text, author })
+    const timestamp = new Bson.Timestamp();
+
+    await postsCollection
+      .insertOne({ text, author, createdAt: timestamp, updatedAt: timestamp })
       .then((post) => {
-        ctx.response.status = 201;
-        ctx.response.body = {
-          success: true,
-          msg: 'Post created',
-          post,
-        };
+        response(ctx, 201, 'Created post', post);
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to create post',
-          err: err.message,
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to create post');
       });
   },
 
   // Delete post
   delete: async (ctx: RouterContext<'/api/posts/:id'>) => {
     const { id } = ctx.params;
-    const post = await Post.find(id || '');
+    const post = await postsCollection.find({ id: id || '' });
 
     if (!post) {
-      ctx.response.status = 404;
-      ctx.response.body = {
-        success: false,
-        msg: 'Post not found',
-      };
-
-      return;
+      return response(ctx, 404, 'Post not found');
     }
 
-    await Post.deleteById(id || '')
+    await postsCollection
+      .deleteOne({ id: id || '' })
       .then(() => {
-        ctx.response.status = 200;
-        ctx.response.body = {
-          success: true,
-          msg: 'Post deleted',
-        };
+        response(ctx, 204, 'Deleted post');
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to delete post',
-          err: err.message,
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to delete post');
       });
   },
 };

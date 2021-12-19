@@ -1,18 +1,13 @@
 import { verify, Context } from '../config/deps.ts';
-import { generateCryptoKey } from '../functions/utils.ts';
+import { logErr, generateCryptoKey } from '../functions/utils.ts';
+import { response } from '../functions/response.ts';
 
 // Verify JWT
 const auth = async (ctx: Context, next: () => Promise<unknown>) => {
   const token = await ctx.request.headers.get('x-auth-token');
 
   if (!token) {
-    ctx.response.status = 401;
-    ctx.response.body = {
-      success: false,
-      msg: 'Authorization denied',
-    };
-
-    return;
+    return response(ctx, 401, 'Unauthorized');
   }
 
   await verify(token, await generateCryptoKey())
@@ -24,14 +19,9 @@ const auth = async (ctx: Context, next: () => Promise<unknown>) => {
 
       await next();
     })
-    .catch(() => {
-      ctx.response.status = 401;
-      ctx.response.body = {
-        success: false,
-        msg: 'Authorization denied',
-      };
-
-      return;
+    .catch((err) => {
+      logErr(err);
+      response(ctx, 401, 'Unauthorized');
     });
 };
 

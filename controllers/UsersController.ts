@@ -1,19 +1,21 @@
-import { create, hash, compare, RouterContext } from '../config/deps.ts';
-import { validate, invalid } from '../functions/validate.ts';
-import { generateCryptoKey } from '../functions/utils.ts';
+import { create, hash, compare, RouterContext, Bson } from '../config/deps.ts';
+import { generateCryptoKey, logErr } from '../functions/utils.ts';
+import { validate } from '../functions/validate.ts';
+import { response } from '../functions/response.ts';
+import { db } from '../config/db.ts';
 
-import User from '../models/User.ts';
+import type { User } from '../models/User.ts';
+
+const usersCollection = db.collection<User>('users');
 
 async function createToken(user: User) {
   const key = await generateCryptoKey();
 
-  const token = await create(
+  return create(
     { alg: 'HS512', typ: 'JWT' },
     { ...user, exp: Date.now() / 1000 + 3600 },
     key
   );
-
-  return token;
 }
 
 export default {
@@ -21,26 +23,22 @@ export default {
   get_user: async (ctx: RouterContext<'/api/users'>) => {
     const bodyValue = await ctx.request.body().value;
 
-    await User.find(bodyValue.user?._id || '')
+    await usersCollection
+      .find(bodyValue.user?._id || '')
+      .next()
       .then((user) => {
+        if (!user) {
+          return response(ctx, 404, 'User not found');
+        }
+
+        // Prevent password being returned
         delete user.password;
 
-        ctx.response.status = 200;
-        ctx.response.body = {
-          success: true,
-          msg: 'User fetched',
-          user,
-        };
+        response(ctx, 200, 'Fetched user', user);
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to fetch user',
-          err: err.message,
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to fetch user');
       });
   },
 
@@ -48,20 +46,16 @@ export default {
   login: async (ctx: RouterContext<'/api/users/login'>) => {
     const { email, password } = await ctx.request.body().value;
 
-    if (!validate({ email, password })) return invalid(ctx);
+    if (!validate({ email, password })) {
+      return response(ctx, 400, 'Missing required fields');
+    }
 
-    await User.where('email', email)
-      .first()
+    await usersCollection
+      .find(email)
+      .next()
       .then(async (user) => {
-        // User not found
         if (!user) {
-          ctx.response.status = 404;
-          ctx.response.body = {
-            success: false,
-            msg: 'User not found',
-          };
-
-          return;
+          return response(ctx, 404, 'User not found');
         }
 
         // Compare passwords
@@ -73,30 +67,14 @@ export default {
         if (match) {
           const token = await createToken(user);
 
-          ctx.response.status = 200;
-          ctx.response.body = {
-            success: true,
-            msg: 'User logged in',
-            user,
-            token,
-          };
+          response(ctx, 200, 'User logged in', { token, user });
         } else {
-          ctx.response.status = 401;
-          ctx.response.body = {
-            success: false,
-            msg: 'Authorization denied',
-          };
+          response(ctx, 401, 'Invalid credentials');
         }
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to login user',
-          err: err.message,
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to login user');
       });
   },
 
@@ -104,48 +82,47 @@ export default {
   signup: async (ctx: RouterContext<'/api/users/signup'>) => {
     const { name, email, password } = await ctx.request.body().value;
 
-    if (!validate({ email, password })) return invalid(ctx);
+    if (!validate({ email, password })) {
+      return response(ctx, 400, 'Missing required fields');
+    }
 
     // Check if user already exists
-    const existingUser = await User.where('email', email).first();
+    const existingUser = await usersCollection.find(email).next();
 
     if (existingUser) {
-      ctx.response.status = 409;
-      ctx.response.body = {
-        success: false,
-        msg: 'User already exists',
-      };
-
-      return;
+      return response(ctx, 409, 'User already exists');
     }
 
     const hashedPassword = await hash(password);
+    const timestamp = new Bson.Timestamp();
+
+    const newUser: Omit<User, '_id'> = {
+      name,
+      email,
+      password: hashedPassword,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
 
     // Attempt signup
-    await User.create({ name, email, password: hashedPassword })
-      .then(async (user) => {
-        // Prevent password being returned
-        delete user.password;
-
-        const token = await createToken(user);
-
-        ctx.response.status = 201;
-        ctx.response.body = {
-          success: true,
-          msg: 'User signed up',
-          user,
-          token,
+    await usersCollection
+      .insertOne(newUser)
+      .then(async (userId) => {
+        const userToReturn = {
+          _id: userId,
+          ...newUser,
         };
+
+        // Prevent password being returned
+        delete userToReturn.password;
+
+        const token = await createToken(userToReturn);
+
+        response(ctx, 201, 'User created', { token, newUser });
       })
       .catch((err) => {
-        console.error(err);
-
-        ctx.response.status = 500;
-        ctx.response.body = {
-          success: false,
-          msg: 'Unable to signup user',
-          err: err.message,
-        };
+        logErr(err);
+        response(ctx, 500, 'Unable to create user');
       });
   },
 };

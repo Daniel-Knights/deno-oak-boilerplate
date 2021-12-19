@@ -1,12 +1,8 @@
 {
   "scripts": {
     "start": {
-      "cmd": "deno run --unstable app.ts",
+      "cmd": "deno run --watch --unstable --allow-read --allow-net app.ts",
       "desc": "run my app.ts file"
-    },
-    "reload": {
-      "cmd": "deno run --reload --unstable app.ts",
-      "desc": "reload deps"
     }
   }
 }

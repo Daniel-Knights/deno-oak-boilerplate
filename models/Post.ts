@@ -1,16 +1,10 @@
-import { Model, DataTypes, Relationships } from '../config/deps.ts';
+import { Bson } from '../config/deps.ts';
+import type { User } from './User.ts';
 
-import User from './User.ts';
-
-class Post extends Model {
-  static table = 'posts';
-  static timestamps = true;
-
-  static fields = {
-    _id: { primaryKey: true },
-    text: DataTypes.STRING,
-    author: Relationships._belongsToField(User),
-  };
+export interface Post {
+  _id: Bson.ObjectId;
+  text: string;
+  author: User;
+  createdAt: Bson.Timestamp;
+  updatedAt: Bson.Timestamp;
 }
-
-export default Post;
