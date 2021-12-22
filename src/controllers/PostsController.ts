@@ -1,7 +1,13 @@
 import { RouterContext, Bson } from '../config/deps.ts';
-import { logErr, hasFalsyProperties, find, findOne } from '../functions/utils.ts';
 import { response } from '../functions/response.ts';
 import { db } from '../config/db.ts';
+import {
+  logErr,
+  hasFalsyProperties,
+  find,
+  findOne,
+  getBody,
+} from '../functions/utils.ts';
 
 import type { Post } from '../models/Post.ts';
 
@@ -47,8 +53,7 @@ export default {
 
   // Create post
   create: async (ctx: RouterContext<'/api/posts'>) => {
-    const bodyValue = await ctx.request.body().value;
-    const { text, author } = (await bodyValue.read()).fields;
+    const { text, author } = await getBody(ctx);
 
     if (hasFalsyProperties({ text, author })) {
       return response(ctx, 400, 'Missing required fields');

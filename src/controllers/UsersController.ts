@@ -1,12 +1,13 @@
 import { create, hash, compare, RouterContext, Bson } from '../config/deps.ts';
+import { response } from '../functions/response.ts';
+import { db } from '../config/db.ts';
 import {
   logErr,
   generateCryptoKey,
   hasFalsyProperties,
   find,
+  getBody,
 } from '../functions/utils.ts';
-import { response } from '../functions/response.ts';
-import { db } from '../config/db.ts';
 
 import type { User } from '../models/User.ts';
 
@@ -54,8 +55,7 @@ export default {
 
   // Login user
   login: async (ctx: RouterContext<'/api/users/login'>) => {
-    const bodyValue = await ctx.request.body().value;
-    const { email, password } = (await bodyValue.read()).fields;
+    const { email, password } = await getBody(ctx);
 
     if (hasFalsyProperties({ email, password })) {
       return response(ctx, 400, 'Missing required fields');
@@ -90,8 +90,7 @@ export default {
 
   // Signup user
   signup: async (ctx: RouterContext<'/api/users/signup'>) => {
-    const bodyValue = await ctx.request.body().value;
-    const { email, password, name } = (await bodyValue.read()).fields;
+    const { email, password, name } = await getBody(ctx);
 
     if (hasFalsyProperties({ email, password })) {
       return response(ctx, 400, 'Missing required fields');

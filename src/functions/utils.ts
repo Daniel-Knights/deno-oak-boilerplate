@@ -1,5 +1,5 @@
 import { yellow, green, red } from 'https://deno.land/std@0.117.0/fmt/colors.ts';
-import { Collection, Filter } from '../config/deps.ts';
+import type { Collection, Filter, Context } from '../config/deps.ts';
 
 function formatLogMessage(messages: unknown[]) {
   return messages
@@ -35,4 +35,11 @@ export function find<T>(collection: Collection<T>, filter?: Filter<T>) {
 }
 export function findOne<T>(collection: Collection<T>, filter?: Filter<T>) {
   return collection.findOne(filter, { noCursorTimeout: false });
+}
+
+/* Unwraps the body object from the context */
+export async function getBody(ctx: Context) {
+  const bodyValue = await ctx.request.body().value;
+
+  return (await bodyValue.read()).fields;
 }
