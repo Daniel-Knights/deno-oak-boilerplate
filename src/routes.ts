@@ -1,6 +1,6 @@
 import { Router } from './config/deps.ts';
 
-import auth from './middleware/auth.ts';
+import { auth } from './middleware/auth.ts';
 
 // Controllers
 import PostsController from './controllers/PostsController.ts';

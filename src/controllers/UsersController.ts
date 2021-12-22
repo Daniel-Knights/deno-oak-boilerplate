@@ -1,15 +1,22 @@
 import { create, hash, compare, RouterContext, Bson } from '../config/deps.ts';
-import { generateCryptoKey, logErr } from '../functions/utils.ts';
-import { validate } from '../functions/validate.ts';
+import {
+  logErr,
+  generateCryptoKey,
+  hasFalsyProperties,
+  find,
+} from '../functions/utils.ts';
 import { response } from '../functions/response.ts';
 import { db } from '../config/db.ts';
 
 import type { User } from '../models/User.ts';
 
 const usersCollection = db.collection<User>('users');
+const userKeys: Record<string, CryptoKey> = {};
 
 async function createToken(user: User) {
   const key = await generateCryptoKey();
+
+  userKeys[user._id.toString()] = key;
 
   return create(
     { alg: 'HS512', typ: 'JWT' },
@@ -19,12 +26,15 @@ async function createToken(user: User) {
 }
 
 export default {
+  keys: userKeys,
   // Get user by id
   get_user: async (ctx: RouterContext<'/api/users'>) => {
-    const bodyValue = await ctx.request.body().value;
+    const _id = await ctx.response.headers.get('_id');
+    if (!_id) {
+      return response(ctx, 400, 'Missing auth token');
+    }
 
-    await usersCollection
-      .find(bodyValue.user?._id || '')
+    await find(usersCollection, { _id: new Bson.ObjectId(_id) })
       .next()
       .then((user) => {
         if (!user) {
@@ -44,14 +54,14 @@ export default {
 
   // Login user
   login: async (ctx: RouterContext<'/api/users/login'>) => {
-    const { email, password } = await ctx.request.body().value;
+    const bodyValue = await ctx.request.body().value;
+    const { email, password } = (await bodyValue.read()).fields;
 
-    if (!validate({ email, password })) {
+    if (hasFalsyProperties({ email, password })) {
       return response(ctx, 400, 'Missing required fields');
     }
 
-    await usersCollection
-      .find(email)
+    await find(usersCollection, { email })
       .next()
       .then(async (user) => {
         if (!user) {
@@ -80,22 +90,21 @@ export default {
 
   // Signup user
   signup: async (ctx: RouterContext<'/api/users/signup'>) => {
-    const { name, email, password } = await ctx.request.body().value;
+    const bodyValue = await ctx.request.body().value;
+    const { email, password, name } = (await bodyValue.read()).fields;
 
-    if (!validate({ email, password })) {
+    if (hasFalsyProperties({ email, password })) {
       return response(ctx, 400, 'Missing required fields');
     }
 
     // Check if user already exists
-    const existingUser = await usersCollection.find(email).next();
-
+    const existingUser = await find(usersCollection, { email }).next();
     if (existingUser) {
       return response(ctx, 409, 'User already exists');
     }
 
     const hashedPassword = await hash(password);
-    const timestamp = new Bson.Timestamp();
-
+    const timestamp = new Date();
     const newUser: Omit<User, '_id'> = {
       name,
       email,
@@ -118,7 +127,7 @@ export default {
 
         const token = await createToken(userToReturn);
 
-        response(ctx, 201, 'User created', { token, newUser });
+        response(ctx, 201, 'User created', { token, user: userToReturn });
       })
       .catch((err) => {
         logErr(err);

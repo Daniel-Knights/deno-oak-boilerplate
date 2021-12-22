@@ -5,6 +5,7 @@ export interface User {
   name: string;
   email: string;
   password?: string;
-  createdAt: Bson.Timestamp;
-  updatedAt: Bson.Timestamp;
+  createdAt: Date;
+  updatedAt: Date;
+  key?: CryptoKey;
 }

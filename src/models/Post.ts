@@ -5,6 +5,6 @@ export interface Post {
   _id: Bson.ObjectId;
   text: string;
   author: User;
-  createdAt: Bson.Timestamp;
-  updatedAt: Bson.Timestamp;
+  createdAt: Date;
+  updatedAt: Date;
 }
