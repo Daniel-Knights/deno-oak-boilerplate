@@ -37,7 +37,7 @@ export function findOne<T>(collection: Collection<T>, filter?: Filter<T>) {
   return collection.findOne(filter, { noCursorTimeout: false });
 }
 
-/* Unwraps the body object from the context */
+/** Unwraps the body object from the context */
 export async function getBody(ctx: Context) {
   const bodyValue = await ctx.request.body().value;
 
