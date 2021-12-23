@@ -2,6 +2,9 @@
   "scripts": {
     "start": {
       "cmd": "deno run --watch --unstable --allow-read --allow-net src/app.ts"
+    },
+    "build": {
+      "cmd": "deno bundle --unstable src/app.ts app.js"
     }
   }
 }
